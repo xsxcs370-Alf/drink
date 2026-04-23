@@ -1,0 +1,1117 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>每日记录</title>
+<link rel="manifest" href="manifest.json" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="default" />
+<meta name="apple-mobile-web-app-title" content="每日记录" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@300;400;500&family=DM+Mono:ital,wght@0,300;0,400;1,300&display=swap" rel="stylesheet" />
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body {
+  height: 100%; background: var(--bg);
+  font-family: 'Noto Serif SC', serif;
+  margin: 0; padding: 0;
+}
+body {
+  min-height: 100vh;
+  min-height: -webkit-fill-available;
+}
+html {
+  height: -webkit-fill-available;
+}
+
+:root {
+  --bg: #FAF7F2;
+  --bg2: #F3EEE7;
+  --ink: #1C1917;
+  --ink2: #6B6460;
+  --ink3: #A89F9A;
+  --accent: #C9A99A;
+  --accent-light: rgba(201,169,154,0.15);
+  --border: #E8E0D8;
+  --card: #FFFFFF;
+  --radius: 16px;
+}
+
+.app-root {
+  width: 100%;
+  min-height: 100vh;
+  max-width: 480px;
+  margin: 0 auto;
+  background: var(--bg);
+  overflow-y: auto; overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+.app-root::-webkit-scrollbar { display: none; }
+.app-root::before {
+  content: '';
+  position: fixed; inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");
+  pointer-events: none; z-index: 100; opacity: 0.4;
+}
+
+/* ── Header ── */
+.header {
+  padding: 16px 24px 12px;
+  animation: fadeUp 0.5s ease both;
+}
+.greeting {
+  font-family: 'DM Mono', monospace;
+  font-size: 9px; letter-spacing: 0.2em;
+  color: var(--ink3); text-transform: uppercase;
+  margin-bottom: 4px;
+}
+.date-row {
+  display: flex; align-items: baseline; justify-content: space-between;
+}
+.date-day {
+  font-family: 'DM Mono', monospace;
+  font-size: 46px; font-weight: 300;
+  color: var(--ink); line-height: 1; letter-spacing: -2px;
+}
+.date-right {
+  text-align: right;
+}
+.date-month { font-size: 13px; font-weight: 400; color: var(--ink); }
+.date-week  { font-size: 11px; font-weight: 300; color: var(--ink3); margin-top: 2px; }
+
+/* ── Calendar Widget ── */
+.cal-widget {
+  margin: 4px 16px 0;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 14px 16px;
+  animation: fadeUp 0.6s 0.05s ease both;
+}
+.cal-tabs {
+  display: flex; gap: 4px; margin-bottom: 12px;
+}
+.cal-tab {
+  font-family: 'DM Mono', monospace;
+  font-size: 10px; letter-spacing: 0.1em;
+  padding: 4px 10px; border-radius: 100px;
+  border: 1px solid var(--border);
+  background: transparent; color: var(--ink3);
+  cursor: pointer; transition: all 0.18s;
+}
+.cal-tab.active {
+  background: var(--ink); color: var(--bg);
+  border-color: var(--ink);
+}
+
+/* Week view */
+.week-row {
+  display: flex; gap: 4px; align-items: center; justify-content: space-between;
+}
+.week-day {
+  display: flex; flex-direction: column; align-items: center; gap: 4px; flex: 1;
+}
+.week-day-label {
+  font-family: 'DM Mono', monospace; font-size: 9px;
+  color: var(--ink3); letter-spacing: 0.05em;
+}
+.day-dot {
+  width: 28px; height: 28px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'DM Mono', monospace; font-size: 12px; font-weight: 600;
+  color: var(--ink2); background: var(--bg2);
+  position: relative; transition: transform 0.15s;
+}
+.day-dot.today {
+  outline: 2px solid var(--ink);
+  outline-offset: 1px;
+  color: var(--ink); font-weight: 500;
+}
+.day-dot.has-mood { color: rgba(255,255,255,0.85); font-weight: 500; }
+.day-dot.future { opacity: 0.3; }
+
+/* Month view */
+.month-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 3px;
+}
+.month-day-label {
+  font-family: 'DM Mono', monospace; font-size: 8px;
+  color: var(--ink3); text-align: center; padding-bottom: 2px;
+}
+.month-dot {
+  width: 100%; aspect-ratio: 1;
+  border-radius: 50%;
+  background: var(--bg2);
+  position: relative;
+}
+.month-dot.today { outline: 1.5px solid var(--ink); outline-offset: 1px; }
+.month-dot.future { opacity: 0.25; }
+.month-dot.empty { background: transparent; }
+
+/* Year view */
+.year-grid {
+  display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px;
+}
+.year-month {
+  display: flex; flex-direction: column; gap: 3px;
+}
+.year-month-label {
+  font-family: 'DM Mono', monospace; font-size: 8px;
+  color: var(--ink3); margin-bottom: 1px;
+}
+.year-month-dots {
+  display: grid; grid-template-columns: repeat(7, 1fr); gap: 1.5px;
+}
+.year-dot {
+  width: 100%; aspect-ratio: 1; border-radius: 50%;
+  background: var(--bg2);
+}
+.year-dot.future { opacity: 0.2; }
+.year-dot.empty { background: transparent; }
+
+/* ── Divider ── */
+.divider {
+  height: 1px; background: var(--border);
+  margin: 14px 16px;
+}
+
+/* ── Compact widgets row ── */
+.widgets-row {
+  display: flex; gap: 10px;
+  padding: 0 16px;
+  animation: fadeUp 0.7s 0.1s ease both;
+}
+
+/* ── Weather compact widget ── */
+.compact-widget {
+  flex: 1;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 12px 14px;
+  position: relative;
+  overflow: hidden;
+}
+.widget-header {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 10px;
+}
+.widget-title {
+  font-family: 'DM Mono', monospace;
+  font-size: 9px; letter-spacing: 0.18em;
+  text-transform: uppercase; color: var(--ink3);
+}
+.widget-selected-icon { font-size: 18px; line-height: 1; }
+
+/* Weather scroll row */
+.weather-scroll {
+  display: flex; gap: 6px; overflow-x: auto;
+  scrollbar-width: none; padding-bottom: 2px;
+  margin-bottom: 10px;
+}
+.weather-scroll::-webkit-scrollbar { display: none; }
+.w-pill {
+  flex-shrink: 0;
+  display: flex; flex-direction: column; align-items: center; gap: 3px;
+  padding: 7px 9px; border-radius: 12px;
+  border: 1px solid var(--border);
+  background: transparent;
+  cursor: pointer; transition: all 0.15s;
+}
+.w-pill.sel {
+  background: var(--accent-light);
+  border-color: var(--accent);
+}
+.w-pill .wi { font-size: 18px; }
+.w-pill .wl {
+  font-family: 'DM Mono', monospace;
+  font-size: 8px; color: var(--ink3);
+  white-space: nowrap;
+}
+.w-pill.sel .wl { color: var(--accent); }
+.w-pill.sel .wi { animation: floatIcon 2.5s ease-in-out infinite; }
+
+.compact-input {
+  width: 100%;
+  border: none; border-top: 1px solid var(--border);
+  background: transparent;
+  padding: 8px 0 2px;
+  font-family: 'Noto Serif SC', serif;
+  font-size: 12px; font-weight: 300;
+  color: var(--ink); outline: none;
+}
+.compact-input::placeholder { color: var(--ink3); }
+
+/* Drink widget */
+.drink-scroll {
+  display: flex; gap: 6px; flex-wrap: wrap;
+  margin-bottom: 10px;
+}
+.d-chip {
+  display: flex; align-items: center; gap: 4px;
+  padding: 5px 10px; border-radius: 100px;
+  border: 1px solid var(--border);
+  background: transparent;
+  font-size: 12px; font-weight: 300; color: var(--ink2);
+  cursor: pointer; transition: all 0.15s;
+}
+.d-chip.sel {
+  background: var(--ink); border-color: var(--ink); color: var(--bg);
+}
+.d-chip .di { font-size: 13px; }
+
+/* ── Mood ── */
+.mood-section {
+  padding: 14px 16px 0;
+  animation: fadeUp 0.75s 0.15s ease both;
+}
+.section-label {
+  font-family: 'DM Mono', monospace;
+  font-size: 9px; letter-spacing: 0.22em;
+  color: var(--ink3); text-transform: uppercase;
+  margin-bottom: 12px;
+  display: flex; align-items: center; gap: 8px;
+}
+.section-label::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+.mood-swatches {
+  display: flex; gap: 8px; align-items: center;
+  overflow-x: auto; scrollbar-width: none;
+  padding: 4px 2px 6px;
+}
+.mood-swatches::-webkit-scrollbar { display: none; }
+.mood-swatch {
+  width: 26px; height: 26px; border-radius: 50%;
+  cursor: pointer; transition: transform 0.2s, box-shadow 0.2s;
+  border: 2px solid transparent; flex-shrink: 0;
+}
+.mood-swatch.sel {
+  transform: scale(1.22);
+  box-shadow: 0 0 0 2px var(--bg), 0 0 0 4px currentColor;
+}
+.mood-text { font-size: 11px; color: var(--ink3); font-weight: 300; white-space: nowrap; margin-left: auto; padding-left: 8px; }
+
+/* ── Note ── */
+.note-section {
+  padding: 14px 16px 0;
+  animation: fadeUp 0.8s 0.2s ease both;
+}
+.detail-input {
+  width: 100%;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 12px 14px;
+  font-family: 'Noto Serif SC', serif;
+  font-size: 13px; font-weight: 300;
+  color: var(--ink); outline: none; resize: none;
+  transition: border-color 0.2s; line-height: 1.65;
+}
+.detail-input::placeholder { color: var(--ink3); }
+.detail-input:focus { border-color: var(--accent); }
+
+/* ── Save ── */
+.save-wrap {
+  padding: 20px 16px 28px;
+  animation: fadeUp 0.85s 0.25s ease both;
+}
+.save-btn {
+  width: 100%;
+  background: var(--ink); color: var(--bg);
+  border: none; border-radius: 14px;
+  padding: 16px;
+  font-family: 'Noto Serif SC', serif;
+  font-size: 15px; font-weight: 400; letter-spacing: 0.08em;
+  cursor: pointer; transition: all 0.2s;
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  position: relative; overflow: hidden;
+}
+.save-btn:active { transform: scale(0.97); }
+.save-btn.saved { background: #5c8a6a; }
+
+/* ── Toast ── */
+.toast {
+  position: fixed; bottom: 100px; left: 50%;
+  transform: translateX(-50%) translateY(16px);
+  background: var(--ink); color: var(--bg);
+  padding: 9px 18px; border-radius: 100px;
+  font-size: 11px; letter-spacing: 0.06em;
+  opacity: 0; transition: all 0.3s ease;
+  pointer-events: none; white-space: nowrap;
+  font-family: 'DM Mono', monospace;
+}
+.toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+/* ── Ripple ── */
+.ripple {
+  position: absolute; border-radius: 50%;
+  background: rgba(255,255,255,0.3);
+  transform: scale(0); animation: rippleAnim 0.6s ease-out;
+  pointer-events: none;
+}
+
+/* ── Animations ── */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes floatIcon {
+  0%, 100% { transform: translateY(0); }
+  50%       { transform: translateY(-3px); }
+}
+@keyframes rippleAnim { to { transform: scale(4); opacity: 0; } }
+@keyframes sheetUp {
+  from { transform: translateY(100%); opacity: 0; }
+  to   { transform: translateY(0); opacity: 1; }
+}
+@keyframes checkPop {
+  0%   { transform: scale(0) rotate(-20deg); opacity: 0; }
+  60%  { transform: scale(1.2); opacity: 1; }
+  100% { transform: scale(1); opacity: 1; }
+}
+.check-anim { animation: checkPop 0.4s ease both; }
+
+/* Tweaks */
+.tweaks-panel {
+  position: fixed; bottom: 24px; right: 24px;
+  background: white; border-radius: 18px;
+  padding: 16px; box-shadow: 0 8px 32px rgba(0,0,0,0.15);
+  width: 200px; z-index: 999;
+  font-family: 'DM Mono', monospace; font-size: 11px;
+  display: none;
+}
+.tweaks-panel.open { display: block; }
+.tweaks-title { font-size: 10px; letter-spacing: 0.15em; text-transform: uppercase; color: #999; margin-bottom: 12px; }
+.tweak-row { margin-bottom: 10px; }
+.tweak-row label { display: block; color: #666; margin-bottom: 4px; font-size: 10px; }
+.tweak-row input[type=color] { width: 100%; height: 28px; border: none; border-radius: 6px; cursor: pointer; padding: 2px; }
+.tweak-row select { width: 100%; border: 1px solid #eee; border-radius: 6px; padding: 4px 6px; font-family: inherit; font-size: 10px; background: white; }
+</style>
+<template id="__bundler_thumbnail" data-bg-color="#FAF7F2">
+  <svg viewBox="0 0 390 844" xmlns="http://www.w3.org/2000/svg">
+    <rect width="390" height="844" fill="#FAF7F2"/>
+    <rect x="24" y="60" width="120" height="8" rx="4" fill="#E8E0D8"/>
+    <rect x="24" y="80" width="60" height="44" rx="4" fill="#1C1917" opacity="0.08"/>
+    <rect x="16" y="148" width="358" height="130" rx="14" fill="#FFFFFF" stroke="#E8E0D8" stroke-width="1"/>
+    <circle cx="50" cy="190" r="12" fill="#E8C5B8"/>
+    <circle cx="80" cy="190" r="12" fill="#B8D4C5"/>
+    <circle cx="110" cy="190" r="12" fill="#C5C8E0"/>
+    <circle cx="140" cy="190" r="12" fill="#E0D4B8"/>
+    <circle cx="170" cy="190" r="12" fill="#D4B8D0"/>
+    <rect x="16" y="296" width="172" height="100" rx="14" fill="#FFFFFF" stroke="#E8E0D8" stroke-width="1"/>
+    <rect x="200" y="296" width="174" height="100" rx="14" fill="#FFFFFF" stroke="#E8E0D8" stroke-width="1"/>
+    <rect x="16" y="414" width="358" height="60" rx="12" fill="#FFFFFF" stroke="#E8E0D8" stroke-width="1"/>
+    <rect x="16" y="492" width="358" height="14" rx="4" fill="#1C1917" opacity="0.06"/>
+    <rect x="16" y="514" width="280" height="10" rx="4" fill="#1C1917" opacity="0.04"/>
+    <rect x="16" y="580" width="358" height="48" rx="12" fill="#1C1917" opacity="0.85"/>
+  </svg>
+</template>
+</head>
+<body>
+<script type="text/babel">
+
+// ── Data ──
+const WEATHER = [
+  {id:'sunny',icon:'☀️',label:'晴'},{id:'partly',icon:'⛅',label:'多云'},
+  {id:'cloudy',icon:'☁️',label:'阴'},{id:'rainy',icon:'🌧️',label:'雨'},
+  {id:'storm',icon:'⛈️',label:'雷雨'},{id:'snowy',icon:'❄️',label:'雪'},
+  {id:'foggy',icon:'🌫️',label:'雾'},{id:'windy',icon:'🍃',label:'风'},
+];
+const DRINK_TYPES = [
+  {id:'coffee',icon:'☕',label:'咖啡',subs:['美式','拿铁','澳白','Dirty','摩卡','手冲']},
+  {id:'tea',icon:'🍵',label:'茶',subs:['绿茶','红茶','乌龙','普洱','花茶','抹茶']},
+  {id:'milktea',icon:'🧋',label:'奶茶',subs:['原味','芋泥','红豆','抹茶','黑糖','桂花']},
+  {id:'alcohol',icon:'🍷',label:'酒水',subs:['红酒','白酒','啤酒','鸡尾酒','清酒','梅酒']},
+  {id:'water',icon:'💧',label:'水',subs:['温水','冷水','气泡水','柠檬水']},
+  {id:'other',icon:'✨',label:'其他',subs:[]},
+];
+const TEMPS = [{id:'ice',label:'冰',icon:'🧊'},{id:'warm',label:'常温',icon:'🌡'},{id:'hot',label:'热',icon:'♨️'}];
+const FEELS = [{id:'cold',label:'冷'},{id:'comfy',label:'舒适'},{id:'hot',label:'热'}];
+const MOODS = [
+  {color:'#E8C5B8',label:'平静'},{color:'#B8D4C5',label:'愉悦'},
+  {color:'#C5C8E0',label:'思绪多'},{color:'#E0D4B8',label:'慵懒'},{color:'#D4B8D0',label:'感性'},
+];
+const WK = ['日','一','二','三','四','五','六'];
+const MN_ZH = ['一月','二月','三月','四月','五月','六月','七月','八月','九月','十月','十一月','十二月'];
+const MN = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const WKF = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+
+function getGreeting(){
+  const h=new Date().getHours();
+  if(h<6) return 'STILL NIGHT'; if(h<11) return 'GOOD MORNING';
+  if(h<14) return 'MIDDAY PAUSE'; if(h<18) return 'AFTERNOON';
+  if(h<21) return 'GOLDEN HOUR'; return 'GOOD EVENING';
+}
+function getDateInfo(){
+  const n=new Date();
+  return {day:String(n.getDate()).padStart(2,'0'),month:MN[n.getMonth()]+' '+n.getFullYear(),week:WKF[n.getDay()]};
+}
+function getAllLogs(){
+  const logs={};
+  for(let i=0;i<localStorage.length;i++){
+    const k=localStorage.key(i);
+    if(k&&k.startsWith('dailyLog_')){try{logs[k.replace('dailyLog_','')]=JSON.parse(localStorage.getItem(k));}catch{}}
+  }
+  return logs;
+}
+function loadSaved(){try{return JSON.parse(localStorage.getItem('dailyLog_'+new Date().toDateString())||'{}');}catch{return {};}}
+function fakeMood(ds){const s=ds.split('').reduce((a,c)=>a+c.charCodeAt(0),0);const r=((s*9301+49297)%233280)/233280;if(r>0.4)return MOODS[Math.floor(r*MOODS.length)].color;return null;}
+function getMoodColor(date,logs){const k=date.toDateString();if(logs[k]&&logs[k].mood!=null)return MOODS[logs[k].mood].color;if(date<new Date())return fakeMood(k);return null;}
+
+// ── Drink Card ──
+function DrinkCard({card,onUpdate,onRemove,isOnly}){
+  const [showSubs,setShowSubs]=React.useState(!card.subtype);
+  const type=DRINK_TYPES.find(d=>d.id===card.type)||DRINK_TYPES[0];
+  return (
+    <div style={{background:'var(--card)',border:'1px solid var(--border)',borderRadius:14,padding:'12px 14px',marginBottom:10,position:'relative'}}>
+      {/* type row */}
+      <div style={{display:'flex',gap:6,flexWrap:'wrap',marginBottom:10}}>
+        {DRINK_TYPES.map(dt=>(
+          <button key={dt.id} onClick={()=>{onUpdate({...card,type:dt.id,subtype:null});setShowSubs(true);}}
+            style={{display:'flex',alignItems:'center',gap:4,padding:'5px 10px',borderRadius:100,
+              border:'1px solid '+(card.type===dt.id?'var(--ink)':'var(--border)'),
+              background:card.type===dt.id?'var(--ink)':'transparent',
+              color:card.type===dt.id?'var(--bg)':'var(--ink2)',
+              fontSize:12,fontFamily:'Noto Serif SC,serif',fontWeight:300,cursor:'pointer'}}>
+            {dt.icon} {dt.label}
+          </button>
+        ))}
+      </div>
+      {/* sub options */}
+      {showSubs && type.subs.length>0 && (
+        <div style={{display:'flex',gap:6,flexWrap:'wrap',marginBottom:10,padding:'8px 10px',background:'var(--bg2)',borderRadius:10}}>
+          {type.subs.map(s=>(
+            <button key={s} onClick={()=>{onUpdate({...card,subtype:s});setShowSubs(false);}}
+              style={{padding:'4px 10px',borderRadius:100,border:'1px solid var(--border)',
+                background:card.subtype===s?'var(--accent-light)':'transparent',
+                borderColor:card.subtype===s?'var(--accent)':'var(--border)',
+                fontSize:12,color:'var(--ink2)',cursor:'pointer',fontFamily:'Noto Serif SC,serif'}}>
+              {s}
+            </button>
+          ))}
+          <button onClick={()=>setShowSubs(false)} style={{padding:'4px 8px',borderRadius:100,border:'none',
+            background:'transparent',fontSize:11,color:'var(--ink3)',cursor:'pointer'}}>跳过</button>
+        </div>
+      )}
+      {!showSubs && card.subtype && (
+        <div style={{marginBottom:10,display:'flex',alignItems:'center',gap:6}}>
+          <span style={{fontSize:13,color:'var(--ink)',fontWeight:400}}>{type.icon} {card.subtype}</span>
+          <button onClick={()=>setShowSubs(true)} style={{fontSize:10,color:'var(--ink3)',background:'none',border:'none',cursor:'pointer',padding:'2px 6px'}}>改</button>
+        </div>
+      )}
+      {/* temp */}
+      <div style={{display:'flex',gap:6,marginBottom:10}}>
+        {TEMPS.map(t=>(
+          <button key={t.id} onClick={()=>onUpdate({...card,temp:card.temp===t.id?null:t.id})}
+            style={{flex:1,padding:'5px 0',borderRadius:10,
+              border:'1px solid '+(card.temp===t.id?'var(--accent)':'var(--border)'),
+              background:card.temp===t.id?'var(--accent-light)':'transparent',
+              fontSize:12,color:card.temp===t.id?'var(--accent)':'var(--ink3)',cursor:'pointer'}}>
+            {t.icon} {t.label}
+          </button>
+        ))}
+      </div>
+      {/* rating + remove */}
+      <div style={{display:'flex',alignItems:'center',justifyContent:'space-between'}}>
+        <div style={{display:'flex',gap:8}}>
+          <button onClick={()=>onUpdate({...card,rating:card.rating===1?null:1})}
+            style={{fontSize:20,background:'none',border:'none',cursor:'pointer',
+              opacity:card.rating===1?1:0.35,transition:'opacity .15s'}}>👍</button>
+          <button onClick={()=>onUpdate({...card,rating:card.rating===-1?null:-1})}
+            style={{fontSize:20,background:'none',border:'none',cursor:'pointer',
+              opacity:card.rating===-1?1:0.35,transition:'opacity .15s'}}>👎</button>
+        </div>
+        {!isOnly && (
+          <button onClick={onRemove} style={{fontSize:11,color:'var(--ink3)',background:'none',border:'none',cursor:'pointer',padding:'4px 8px'}}>删除</button>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ── Weather Widget ──
+function WeatherWidget({weather,setWeather,weatherNote,setWeatherNote,weatherTemp,setWeatherTemp,weatherFeel,setWeatherFeel}){
+  const sel=WEATHER.find(w=>w.id===weather);
+  return (
+    <div style={{background:'var(--card)',border:'1px solid var(--border)',borderRadius:'var(--radius)',padding:'12px 14px'}}>
+      <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:10}}>
+        <span style={{fontFamily:'DM Mono,monospace',fontSize:9,letterSpacing:'.18em',textTransform:'uppercase',color:'var(--ink3)'}}>天气</span>
+        {sel&&<span style={{fontSize:18,animation:'floatIcon 2.5s ease-in-out infinite'}}>{sel.icon}</span>}
+      </div>
+      {/* icons */}
+      <div style={{display:'flex',gap:5,overflowX:'auto',scrollbarWidth:'none',marginBottom:10,paddingBottom:2}}>
+        {WEATHER.map(w=>(
+          <button key={w.id} onClick={()=>setWeather(w.id)}
+            style={{flexShrink:0,display:'flex',flexDirection:'column',alignItems:'center',gap:3,
+              padding:'6px 8px',borderRadius:12,border:'1px solid '+(weather===w.id?'var(--accent)':'var(--border)'),
+              background:weather===w.id?'var(--accent-light)':'transparent',cursor:'pointer'}}>
+            <span style={{fontSize:18}}>{w.icon}</span>
+            <span style={{fontFamily:'DM Mono,monospace',fontSize:8,color:weather===w.id?'var(--accent)':'var(--ink3)'}}>{w.label}</span>
+          </button>
+        ))}
+      </div>
+      {/* temp + feel */}
+      <div style={{display:'flex',gap:8,marginBottom:10}}>
+        <div style={{flex:1,position:'relative'}}>
+          <input type="number" placeholder="温度°C" value={weatherTemp}
+            onChange={e=>setWeatherTemp(e.target.value)}
+            style={{width:'100%',border:'1px solid var(--border)',borderRadius:10,padding:'7px 10px',
+              fontSize:13,fontFamily:'Noto Serif SC,serif',fontWeight:300,color:'var(--ink)',
+              background:'var(--bg2)',outline:'none'}}/>
+        </div>
+        <div style={{display:'flex',gap:4}}>
+          {FEELS.map(f=>(
+            <button key={f.id} onClick={()=>setWeatherFeel(weatherFeel===f.id?null:f.id)}
+              style={{padding:'7px 10px',borderRadius:10,
+                border:'1px solid '+(weatherFeel===f.id?'var(--accent)':'var(--border)'),
+                background:weatherFeel===f.id?'var(--accent-light)':'transparent',
+                fontSize:12,color:weatherFeel===f.id?'var(--accent)':'var(--ink3)',cursor:'pointer'}}>
+              {f.label}
+            </button>
+          ))}
+        </div>
+      </div>
+      <input style={{width:'100%',border:'none',borderTop:'1px solid var(--border)',
+        background:'transparent',padding:'8px 0 2px',
+        fontFamily:'Noto Serif SC,serif',fontSize:12,fontWeight:300,color:'var(--ink)',outline:'none'}}
+        type="text" placeholder="具体描述…" value={weatherNote} onChange={e=>setWeatherNote(e.target.value)}/>
+    </div>
+  );
+}
+
+
+// ── Drink Pie Chart ──
+function DrinkPieChart({drinkCounts, total}){
+  if(!total) return null;
+  const PIE_COLORS = ['#C9A99A','#B8D4C5','#C5C8E0','#E0D4B8','#D4B8D0','#A8C4D4'];
+  const cx=80, cy=80, r=62, inner=34;
+  let cumAngle=-Math.PI/2;
+  const slices=Object.entries(drinkCounts).sort((a,b)=>b[1]-a[1]).map(([id,cnt],i)=>{
+    const dt=DRINK_TYPES.find(d=>d.id===id);
+    const frac=cnt/total;
+    const startAngle=cumAngle;
+    cumAngle+=frac*2*Math.PI;
+    const endAngle=cumAngle;
+    const x1=cx+r*Math.cos(startAngle), y1=cy+r*Math.sin(startAngle);
+    const x2=cx+r*Math.cos(endAngle),   y2=cy+r*Math.sin(endAngle);
+    const ix1=cx+inner*Math.cos(startAngle), iy1=cy+inner*Math.sin(startAngle);
+    const ix2=cx+inner*Math.cos(endAngle),   iy2=cy+inner*Math.sin(endAngle);
+    const largeArc=frac>0.5?1:0;
+    const path=`M ${ix1} ${iy1} L ${x1} ${y1} A ${r} ${r} 0 ${largeArc} 1 ${x2} ${y2} L ${ix2} ${iy2} A ${inner} ${inner} 0 ${largeArc} 0 ${ix1} ${iy1} Z`;
+    return {id,cnt,frac,path,color:PIE_COLORS[i%PIE_COLORS.length],icon:dt?.icon||'',label:dt?.label||id};
+  });
+  const topType=slices[0];
+  return (
+    <div style={{display:'flex',alignItems:'center',gap:16}}>
+      <svg width="160" height="160" viewBox="0 0 160 160" style={{flexShrink:0}}>
+        {slices.map((s,i)=>(
+          <path key={i} d={s.path} fill={s.color} stroke="var(--bg)" strokeWidth="1.5"/>
+        ))}
+        <text x={cx} y={cy-6} textAnchor="middle" style={{fontSize:20,fontFamily:'serif'}}>{topType?.icon}</text>
+        <text x={cx} y={cy+10} textAnchor="middle" fill="var(--ink2)" style={{fontSize:9,fontFamily:'DM Mono,monospace'}}>{Math.round((topType?.frac||0)*100)}%</text>
+      </svg>
+      <div style={{flex:1,display:'flex',flexDirection:'column',gap:8}}>
+        {slices.map((s,i)=>(
+          <div key={i} style={{display:'flex',alignItems:'center',gap:8}}>
+            <div style={{width:8,height:8,borderRadius:2,background:s.color,flexShrink:0}}/>
+            <span style={{fontSize:13}}>{s.icon}</span>
+            <span style={{fontSize:12,color:'var(--ink2)',fontWeight:300,flex:1}}>{s.label}</span>
+            <span style={{fontFamily:'DM Mono,monospace',fontSize:11,color:'var(--ink3)'}}>{s.cnt}杯</span>
+          </div>
+        ))}
+        <div style={{borderTop:'1px solid var(--border)',paddingTop:8,marginTop:2,display:'flex',justifyContent:'space-between'}}>
+          <span style={{fontFamily:'DM Mono,monospace',fontSize:9,color:'var(--ink3)',letterSpacing:'.1em'}}>本月共</span>
+          <span style={{fontFamily:'DM Mono,monospace',fontSize:11,color:'var(--ink)'}}>{total}杯</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── History Tab ──
+function HistoryTab({logs}){
+  const today=new Date();
+  const [viewYear,setViewYear]=React.useState(today.getFullYear());
+  const [viewMonth,setViewMonth]=React.useState(today.getMonth());
+
+  // Stats for current view month
+  const monthLogs=Object.entries(logs).filter(([k])=>{
+    const d=new Date(k);return d.getFullYear()===viewYear&&d.getMonth()===viewMonth;
+  }).map(([k,v])=>({date:new Date(k),...v}));
+
+  // Drink counts
+  const drinkCounts={};
+  monthLogs.forEach(l=>{
+    (l.drinks||[]).forEach(item=>{
+      const id=typeof item==='string'?item:item.type||item;
+      drinkCounts[id]=(drinkCounts[id]||0)+1;
+    });
+  });
+  const topDrinks=Object.entries(drinkCounts).sort((a,b)=>b[1]-a[1]).slice(0,4);
+
+  // Mood distribution
+  const moodCounts=[0,0,0,0,0];
+  monthLogs.forEach(l=>{if(l.mood!=null)moodCounts[l.mood]++;});
+  const totalMoods=moodCounts.reduce((a,b)=>a+b,0);
+
+  // Calendar for month
+  const firstDay=new Date(viewYear,viewMonth,1).getDay();
+  const dim=new Date(viewYear,viewMonth+1,0).getDate();
+  const cells=[];
+  for(let i=0;i<firstDay;i++)cells.push(null);
+  for(let i=1;i<=dim;i++)cells.push(i);
+  while(cells.length%7!==0)cells.push(null);
+
+  const isNow=viewYear===today.getFullYear()&&viewMonth===today.getMonth();
+
+  return (
+    <div style={{padding:'0 14px 80px'}}>
+      {/* Month nav */}
+      <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:16,paddingTop:4}}>
+        <button onClick={()=>{if(viewMonth===0){setViewMonth(11);setViewYear(y=>y-1);}else setViewMonth(m=>m-1);}}
+          style={{background:'none',border:'none',cursor:'pointer',padding:'4px 10px',fontSize:18,color:'var(--ink2)'}}>‹</button>
+        <span style={{fontFamily:'DM Mono,monospace',fontSize:12,color:'var(--ink)',letterSpacing:'.08em'}}>
+          {viewYear}年{viewMonth+1}月
+        </span>
+        <button onClick={()=>{if(isNow)return;if(viewMonth===11){setViewMonth(0);setViewYear(y=>y+1);}else setViewMonth(m=>m+1);}}
+          style={{background:'none',border:'none',cursor:'pointer',padding:'4px 10px',fontSize:18,color:isNow?'var(--border)':'var(--ink2)'}}>›</button>
+      </div>
+
+      {/* Mood calendar */}
+      <div style={{background:'var(--card)',border:'1px solid var(--border)',borderRadius:'var(--radius)',padding:'14px',marginBottom:12}}>
+        <div style={{fontFamily:'DM Mono,monospace',fontSize:9,letterSpacing:'.18em',textTransform:'uppercase',color:'var(--ink3)',marginBottom:10}}>心情日历</div>
+        <div style={{display:'grid',gridTemplateColumns:'repeat(7,1fr)',gap:3,marginBottom:4}}>
+          {WK.map(l=><div key={l} style={{fontFamily:'DM Mono,monospace',fontSize:8,color:'var(--ink3)',textAlign:'center'}}>{l}</div>)}
+        </div>
+        <div style={{display:'grid',gridTemplateColumns:'repeat(7,1fr)',gap:3}}>
+          {cells.map((d,i)=>{
+            if(!d)return <div key={i} style={{aspectRatio:1}}/>;
+            const date=new Date(viewYear,viewMonth,d);
+            const mc=getMoodColor(date,logs);
+            const isT=date.toDateString()===today.toDateString();
+            const isFu=date>today;
+            return <div key={i} style={{aspectRatio:1,borderRadius:'50%',
+              background:mc&&!isFu?mc:'var(--bg2)',opacity:isFu?.25:1,
+              outline:isT?'1.5px solid var(--ink)':'none',outlineOffset:1.5,
+              display:'flex',alignItems:'center',justifyContent:'center'}}>
+              <span style={{fontFamily:'DM Mono,monospace',fontSize:6,fontWeight:600,
+                color:mc&&!isFu?'rgba(255,255,255,.75)':'var(--ink3)',lineHeight:1}}>{d}</span>
+            </div>;
+          })}
+        </div>
+      </div>
+
+      {/* Mood distribution */}
+      {totalMoods>0&&(
+        <div style={{background:'var(--card)',border:'1px solid var(--border)',borderRadius:'var(--radius)',padding:'14px',marginBottom:12}}>
+          <div style={{fontFamily:'DM Mono,monospace',fontSize:9,letterSpacing:'.18em',textTransform:'uppercase',color:'var(--ink3)',marginBottom:12}}>本月心情分布</div>
+          <div style={{display:'flex',gap:4,alignItems:'flex-end',height:48}}>
+            {MOODS.map((m,i)=>(
+              <div key={i} style={{flex:1,display:'flex',flexDirection:'column',alignItems:'center',gap:4}}>
+                <span style={{fontFamily:'DM Mono,monospace',fontSize:8,color:'var(--ink3)'}}>{moodCounts[i]}</span>
+                <div style={{width:'100%',background:m.color,borderRadius:4,
+                  height:totalMoods>0?Math.max(4,Math.round(moodCounts[i]/totalMoods*40)):4,
+                  transition:'height .4s ease'}}/>
+                <span style={{fontSize:9,color:'var(--ink3)',fontWeight:300}}>{m.label}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Drink stats */}
+      {topDrinks.length>0&&(
+        <div style={{background:'var(--card)',border:'1px solid var(--border)',borderRadius:'var(--radius)',padding:'14px',marginBottom:12}}>
+          <div style={{fontFamily:'DM Mono,monospace',fontSize:9,letterSpacing:'.18em',textTransform:'uppercase',color:'var(--ink3)',marginBottom:16}}>本月饮品</div>
+          <DrinkPieChart drinkCounts={drinkCounts} total={Object.values(drinkCounts).reduce((a,b)=>a+b,0)}/>
+        </div>
+      )}
+
+      {monthLogs.length===0&&(
+        <div style={{textAlign:'center',padding:'40px 0',color:'var(--ink3)',fontSize:13,fontWeight:300,letterSpacing:'.04em'}}>
+          这个月还没有记录
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── Day Detail Sheet ──
+function DayDetailSheet({date,logs,onClose}){
+  if(!date)return null;
+  const key=date.toDateString();
+  const data=logs[key]||{};
+  const weatherObj=WEATHER.find(w=>w.id===data.weather);
+  const moodObj=data.mood!=null?MOODS[data.mood]:null;
+  const rawDrinks=data.drinks||[];
+  const drinkCards=rawDrinks.map(item=>{
+    if(typeof item==='string'){const dt=DRINK_TYPES.find(d=>d.id===item);return dt?{type:dt.id,subtype:null,temp:null,rating:null}:null;}
+    return item;
+  }).filter(Boolean);
+  const dateLabel=date.getFullYear()+'年'+(date.getMonth()+1)+'月'+date.getDate()+'日';
+  const weekLabel=['周日','周一','周二','周三','周四','周五','周六'][date.getDay()];
+  const hasAny=weatherObj||drinkCards.length||data.note||moodObj;
+  return (
+    <div style={{position:'fixed',inset:0,zIndex:200,display:'flex',flexDirection:'column',justifyContent:'flex-end'}} onClick={onClose}>
+      <div style={{position:'absolute',inset:0,background:'rgba(28,25,23,.32)',backdropFilter:'blur(3px)'}}/>
+      <div style={{position:'relative',background:'var(--bg)',borderRadius:'22px 22px 0 0',
+        padding:'18px 20px 44px',animation:'sheetUp .3s cubic-bezier(.34,1.4,.64,1) both',
+        maxHeight:'80vh',overflowY:'auto'}} onClick={e=>e.stopPropagation()}>
+        <div style={{width:36,height:4,borderRadius:2,background:'var(--border)',margin:'0 auto 16px'}}/>
+        <div style={{display:'flex',alignItems:'baseline',justifyContent:'space-between',marginBottom:16}}>
+          <div>
+            <div style={{fontFamily:'DM Mono,monospace',fontSize:26,fontWeight:300,color:'var(--ink)',letterSpacing:-1,lineHeight:1}}>{String(date.getDate()).padStart(2,'0')}</div>
+            <div style={{fontFamily:'DM Mono,monospace',fontSize:10,color:'var(--ink3)',letterSpacing:'.08em',marginTop:4}}>{dateLabel} · {weekLabel}</div>
+          </div>
+          {moodObj&&<div style={{display:'flex',alignItems:'center',gap:6}}>
+            <span style={{fontSize:11,color:'var(--ink3)'}}>{moodObj.label}</span>
+            <div style={{width:24,height:24,borderRadius:'50%',background:moodObj.color}}/>
+          </div>}
+        </div>
+        {!hasAny&&<div style={{textAlign:'center',padding:'20px 0 8px',color:'var(--ink3)',fontSize:13,fontWeight:300}}>这一天还没有记录</div>}
+        {weatherObj&&(
+          <div style={{display:'flex',alignItems:'center',gap:10,marginBottom:10,padding:'10px 14px',background:'var(--bg2)',borderRadius:14}}>
+            <span style={{fontSize:22}}>{weatherObj.icon}</span>
+            <div>
+              <div style={{fontSize:10,color:'var(--ink3)',fontFamily:'DM Mono,monospace',letterSpacing:'.12em',marginBottom:2}}>天气</div>
+              <div style={{fontSize:13,color:'var(--ink)',fontWeight:300}}>
+                {weatherObj.label}
+                {data.weatherTemp?' · '+data.weatherTemp+'°C':''}
+                {data.weatherFeel?' · '+FEELS.find(f=>f.id===data.weatherFeel)?.label:''}
+                {data.weatherNote?' · '+data.weatherNote:''}
+              </div>
+            </div>
+          </div>
+        )}
+        {drinkCards.length>0&&(
+          <div style={{marginBottom:10,padding:'10px 14px',background:'var(--bg2)',borderRadius:14}}>
+            <div style={{fontSize:10,color:'var(--ink3)',fontFamily:'DM Mono,monospace',letterSpacing:'.12em',marginBottom:8}}>饮品</div>
+            {drinkCards.map((dc,i)=>{
+              const dt=DRINK_TYPES.find(d=>d.id===dc.type);
+              if(!dt)return null;
+              return <div key={i} style={{display:'flex',alignItems:'center',gap:8,marginBottom:i<drinkCards.length-1?6:0}}>
+                <span style={{fontSize:16}}>{dt.icon}</span>
+                <span style={{fontSize:13,color:'var(--ink)',fontWeight:300}}>{dt.label}{dc.subtype?' · '+dc.subtype:''}{dc.temp?' · '+TEMPS.find(t=>t.id===dc.temp)?.label:''}</span>
+                {dc.rating===1&&<span style={{fontSize:14}}>👍</span>}
+                {dc.rating===-1&&<span style={{fontSize:14}}>👎</span>}
+              </div>;
+            })}
+            {data.drinkNote&&<div style={{fontSize:12,color:'var(--ink3)',marginTop:6,fontWeight:300}}>{data.drinkNote}</div>}
+          </div>
+        )}
+        {data.note&&(
+          <div style={{padding:'10px 14px',background:'var(--bg2)',borderRadius:14}}>
+            <div style={{fontSize:10,color:'var(--ink3)',fontFamily:'DM Mono,monospace',letterSpacing:'.12em',marginBottom:6}}>随手记</div>
+            <div style={{fontSize:13,color:'var(--ink)',fontWeight:300,lineHeight:1.75,whiteSpace:'pre-wrap'}}>{data.note}</div>
+          </div>
+        )}
+        <button onClick={onClose} style={{marginTop:14,width:'100%',background:'transparent',border:'1px solid var(--border)',borderRadius:12,padding:'12px',fontSize:13,color:'var(--ink3)',cursor:'pointer',fontFamily:'Noto Serif SC,serif',letterSpacing:'.06em'}}>关闭</button>
+      </div>
+    </div>
+  );
+}
+
+// ── Calendar Widget ──
+function CalendarWidget({logs,onDayClick}){
+  const [tab,setTab]=React.useState('week');
+  const today=new Date();
+  const [viewYear,setViewYear]=React.useState(today.getFullYear());
+  const [viewMonth,setViewMonth]=React.useState(today.getMonth());
+  function mc(date){return getMoodColor(date,logs);}
+  function prevMonth(){if(viewMonth===0){setViewMonth(11);setViewYear(y=>y-1);}else setViewMonth(m=>m-1);}
+  function nextMonth(){if(viewYear===today.getFullYear()&&viewMonth>=today.getMonth())return;if(viewMonth===11){setViewMonth(0);setViewYear(y=>y+1);}else setViewMonth(m=>m+1);}
+  const isNow=viewYear===today.getFullYear()&&viewMonth===today.getMonth();
+
+  function WeekView(){
+    const start=new Date(today);start.setDate(today.getDate()-today.getDay());
+    const days=Array.from({length:7},(_,i)=>{const d=new Date(start);d.setDate(start.getDate()+i);return d;});
+    return <div style={{display:'flex',justifyContent:'space-between'}}>
+      {days.map((d,i)=>{
+        const isT=d.toDateString()===today.toDateString(),isFu=d>today,moodC=mc(d);
+        return <div key={i} style={{display:'flex',flexDirection:'column',alignItems:'center',gap:5,flex:1,cursor:isFu?'default':'pointer'}} onClick={()=>!isFu&&onDayClick(d)}>
+          <div style={{fontFamily:'DM Mono,monospace',fontSize:9,color:'var(--ink3)'}}>{WK[i]}</div>
+          <div style={{width:30,height:30,borderRadius:'50%',display:'flex',alignItems:'center',justifyContent:'center',
+            fontFamily:'DM Mono,monospace',fontSize:11,fontWeight:600,
+            background:moodC||'var(--bg2)',color:moodC?'rgba(255,255,255,.85)':'var(--ink2)',
+            outline:isT?'2px solid var(--ink)':'none',outlineOffset:2,opacity:isFu?.3:1}}>
+            {d.getDate()}
+          </div>
+        </div>;
+      })}
+    </div>;
+  }
+
+  function MonthView(){
+    const fd=new Date(viewYear,viewMonth,1).getDay(),dim=new Date(viewYear,viewMonth+1,0).getDate();
+    const cells=[];for(let i=0;i<fd;i++)cells.push(null);for(let i=1;i<=dim;i++)cells.push(i);
+    while(cells.length%7!==0)cells.push(null);
+    return <div>
+      <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:10}}>
+        <button onClick={prevMonth} style={{background:'none',border:'none',cursor:'pointer',padding:'2px 8px',fontSize:16,color:'var(--ink2)',lineHeight:1}}>‹</button>
+        <span style={{fontFamily:'DM Mono,monospace',fontSize:11,color:'var(--ink2)',letterSpacing:'.08em'}}>{viewYear}年{viewMonth+1}月</span>
+        <button onClick={nextMonth} style={{background:'none',border:'none',cursor:'pointer',padding:'2px 8px',fontSize:16,color:isNow?'var(--border)':'var(--ink2)',lineHeight:1}}>›</button>
+      </div>
+      <div style={{display:'grid',gridTemplateColumns:'repeat(7,1fr)',gap:3,marginBottom:4}}>
+        {WK.map(l=><div key={l} style={{fontFamily:'DM Mono,monospace',fontSize:8,color:'var(--ink3)',textAlign:'center',paddingBottom:2}}>{l}</div>)}
+      </div>
+      <div style={{display:'grid',gridTemplateColumns:'repeat(7,1fr)',gap:3}}>
+        {cells.map((d,i)=>{
+          if(!d)return <div key={i} style={{aspectRatio:1}}/>;
+          const date=new Date(viewYear,viewMonth,d),isT=date.toDateString()===today.toDateString(),isFu=date>today,moodC=mc(date);
+          return <div key={i} style={{aspectRatio:1,borderRadius:'50%',background:moodC&&!isFu?moodC:'var(--bg2)',
+            opacity:isFu?.25:1,display:'flex',alignItems:'center',justifyContent:'center',
+            outline:isT?'1.5px solid var(--ink)':'none',outlineOffset:1.5,cursor:isFu?'default':'pointer'}}
+            onClick={()=>!isFu&&onDayClick(date)}>
+            <span style={{fontFamily:'DM Mono,monospace',fontSize:6,fontWeight:600,color:moodC&&!isFu?'rgba(255,255,255,.75)':'var(--ink3)',lineHeight:1}}>{d}</span>
+          </div>;
+        })}
+      </div>
+    </div>;
+  }
+
+  function YearView(){
+    const yr=today.getFullYear();
+    return <div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:8}}>
+      {Array.from({length:12},(_,m)=>{
+        const dim2=new Date(yr,m+1,0).getDate(),fd2=new Date(yr,m,1).getDay();
+        const cells2=[];for(let i=0;i<fd2;i++)cells2.push(null);for(let i=1;i<=dim2;i++)cells2.push(i);while(cells2.length%7!==0)cells2.push(null);
+        return <div key={m}>
+          <div style={{fontFamily:'DM Mono,monospace',fontSize:8,color:'var(--ink3)',marginBottom:2}}>{MN_ZH[m]}</div>
+          <div style={{display:'grid',gridTemplateColumns:'repeat(7,1fr)',gap:1.5}}>
+            {cells2.map((d,i)=>{
+              if(!d)return <div key={i} style={{aspectRatio:1}}/>;
+              const date=new Date(yr,m,d),isFu=date>today,moodC=mc(date);
+              return <div key={i} style={{aspectRatio:1,borderRadius:'50%',background:moodC&&!isFu?moodC:'var(--bg2)',opacity:isFu?.2:1,cursor:isFu?'default':'pointer'}}
+                onClick={()=>!isFu&&onDayClick(date)}/>;
+            })}
+          </div>
+        </div>;
+      })}
+    </div>;
+  }
+
+  return <div style={{margin:'4px 14px 0',background:'var(--card)',border:'1px solid var(--border)',borderRadius:'var(--radius)',padding:'14px 14px',animation:'fadeUp .6s .05s ease both'}}>
+    <div style={{display:'flex',gap:4,marginBottom:12}}>
+      {['week','month','year'].map(t=>(
+        <button key={t} onClick={()=>setTab(t)} style={{fontFamily:'DM Mono,monospace',fontSize:10,letterSpacing:'.1em',
+          padding:'5px 11px',borderRadius:100,border:'1px solid '+(tab===t?'var(--ink)':'var(--border)'),
+          background:tab===t?'var(--ink)':'transparent',color:tab===t?'var(--bg)':'var(--ink3)',cursor:'pointer'}}>
+          {t==='week'?'本周':t==='month'?'本月':'本年'}
+        </button>
+      ))}
+    </div>
+    {tab==='week'&&<WeekView/>}
+    {tab==='month'&&<MonthView/>}
+    {tab==='year'&&<YearView/>}
+  </div>;
+}
+
+// ── Log Tab ──
+function LogTab({logs,setLogs}){
+  const saved=loadSaved();
+  const [weather,setWeather]=React.useState(saved.weather||null);
+  const [weatherNote,setWeatherNote]=React.useState(saved.weatherNote||'');
+  const [weatherTemp,setWeatherTemp]=React.useState(saved.weatherTemp||'');
+  const [weatherFeel,setWeatherFeel]=React.useState(saved.weatherFeel||null);
+  const [drinkCards,setDrinkCards]=React.useState(()=>{
+    if(saved.drinks&&saved.drinks.length>0){
+      return saved.drinks.map(item=>typeof item==='string'?{type:item,subtype:null,temp:null,rating:null}:item);
+    }
+    return [{type:'coffee',subtype:null,temp:null,rating:null}];
+  });
+  const [mood,setMood]=React.useState(saved.mood??null);
+  const [note,setNote]=React.useState(saved.note||'');
+  const [savedState,setSavedState]=React.useState(false);
+  const [toastShow,setToastShow]=React.useState(false);
+  const [selectedDay,setSelectedDay]=React.useState(null);
+
+  const moodLabel=mood!==null?MOODS[mood].label:'';
+
+  const addDrinkCard=()=>setDrinkCards(prev=>[...prev,{type:'coffee',subtype:null,temp:null,rating:null}]);
+  const updateDrinkCard=(i,card)=>setDrinkCards(prev=>prev.map((c,j)=>j===i?card:c));
+  const removeDrinkCard=(i)=>setDrinkCards(prev=>prev.filter((_,j)=>j!==i));
+
+  const handleSave=(e)=>{
+    const btn=e.currentTarget,rect=btn.getBoundingClientRect();
+    const ripple=document.createElement('span');ripple.className='ripple';
+    const size=Math.max(rect.width,rect.height);
+    ripple.style.cssText='width:'+size+'px;height:'+size+'px;left:'+(e.clientX-rect.left-size/2)+'px;top:'+(e.clientY-rect.top-size/2)+'px';
+    btn.appendChild(ripple);setTimeout(()=>ripple.remove(),700);
+    const data={weather,weatherNote,weatherTemp,weatherFeel,drinks:drinkCards,mood,note};
+    localStorage.setItem('dailyLog_'+new Date().toDateString(),JSON.stringify(data));
+    setLogs(getAllLogs());setSavedState(true);setToastShow(true);
+    setTimeout(()=>setToastShow(false),2200);setTimeout(()=>setSavedState(false),2500);
+  };
+
+  const dateInfo=getDateInfo();
+  return <>
+    <div style={{animation:'fadeUp .5s ease both'}}>
+      <div style={{padding:'52px 22px 14px'}}>
+        <div style={{fontFamily:'DM Mono,monospace',fontSize:9,letterSpacing:'.2em',color:'var(--ink3)',textTransform:'uppercase',marginBottom:4}}>{getGreeting()}</div>
+        <div style={{display:'flex',alignItems:'baseline',justifyContent:'space-between'}}>
+          <div style={{fontFamily:'DM Mono,monospace',fontSize:52,fontWeight:300,color:'var(--ink)',lineHeight:1,letterSpacing:-2}}>{dateInfo.day}</div>
+          <div style={{textAlign:'right'}}>
+            <div style={{fontSize:13,fontWeight:400,color:'var(--ink)'}}>{dateInfo.month}</div>
+            <div style={{fontSize:11,fontWeight:300,color:'var(--ink3)',marginTop:2}}>{dateInfo.week}</div>
+          </div>
+        </div>
+      </div>
+      <CalendarWidget logs={logs} onDayClick={setSelectedDay}/>
+      {selectedDay&&<DayDetailSheet date={selectedDay} logs={logs} onClose={()=>setSelectedDay(null)}/>}
+    </div>
+    <div style={{height:1,background:'var(--border)',margin:'14px 14px'}}/>
+    {/* Weather */}
+    <div style={{padding:'0 14px',marginBottom:12,animation:'fadeUp .6s .1s ease both'}}>
+      <WeatherWidget weather={weather} setWeather={setWeather}
+        weatherNote={weatherNote} setWeatherNote={setWeatherNote}
+        weatherTemp={weatherTemp} setWeatherTemp={setWeatherTemp}
+        weatherFeel={weatherFeel} setWeatherFeel={setWeatherFeel}/>
+    </div>
+    {/* Drinks */}
+    <div style={{padding:'0 14px',animation:'fadeUp .65s .12s ease both'}}>
+      <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:10}}>
+        <span style={{fontFamily:'DM Mono,monospace',fontSize:9,letterSpacing:'.18em',textTransform:'uppercase',color:'var(--ink3)'}}>饮品记录</span>
+        <button onClick={addDrinkCard} style={{display:'flex',alignItems:'center',gap:4,padding:'4px 12px',borderRadius:100,border:'1px solid var(--border)',background:'transparent',fontSize:12,color:'var(--ink2)',cursor:'pointer',fontFamily:'Noto Serif SC,serif'}}>+ 再来一杯</button>
+      </div>
+      {drinkCards.map((card,i)=>(
+        <DrinkCard key={i} card={card} onUpdate={c=>updateDrinkCard(i,c)} onRemove={()=>removeDrinkCard(i)} isOnly={drinkCards.length===1}/>
+      ))}
+    </div>
+    {/* Mood */}
+    <div style={{padding:'14px 14px 0',animation:'fadeUp .7s .14s ease both'}}>
+      <div style={{fontFamily:'DM Mono,monospace',fontSize:9,letterSpacing:'.22em',color:'var(--ink3)',textTransform:'uppercase',marginBottom:12,display:'flex',alignItems:'center',gap:8}}>
+        今天的心情色<span style={{flex:1,height:1,background:'var(--border)',display:'block'}}/>
+      </div>
+      <div style={{display:'flex',gap:8,alignItems:'center',overflowX:'auto',scrollbarWidth:'none',padding:'4px 2px 6px'}}>
+        {MOODS.map((m,i)=>(
+          <div key={i} onClick={()=>setMood(mood===i?null:i)}
+            style={{width:28,height:28,borderRadius:'50%',background:m.color,cursor:'pointer',flexShrink:0,
+              border:'2px solid transparent',
+              transform:mood===i?'scale(1.2)':'scale(1)',
+              boxShadow:mood===i?'0 0 0 2px var(--bg), 0 0 0 4px '+m.color:'none',
+              transition:'transform .2s, box-shadow .2s',color:m.color}}/>
+        ))}
+        {moodLabel&&<div style={{fontSize:11,color:'var(--ink3)',fontWeight:300,marginLeft:'auto',paddingLeft:8,whiteSpace:'nowrap'}}>{moodLabel}</div>}
+      </div>
+    </div>
+    {/* Note */}
+    <div style={{padding:'14px 14px 0',animation:'fadeUp .75s .16s ease both'}}>
+      <div style={{fontFamily:'DM Mono,monospace',fontSize:9,letterSpacing:'.22em',color:'var(--ink3)',textTransform:'uppercase',marginBottom:12,display:'flex',alignItems:'center',gap:8}}>
+        随手记<span style={{flex:1,height:1,background:'var(--border)',display:'block'}}/>
+      </div>
+      <div style={{position:'relative'}}>
+        <textarea value={note} onChange={e=>setNote(e.target.value)} rows={3} placeholder="今天有什么想留下来的…"
+          style={{width:'100%',background:'var(--card)',border:'1px solid var(--border)',borderRadius:14,
+            padding:'12px 14px 36px',fontFamily:'Noto Serif SC,serif',fontSize:13,fontWeight:300,
+            color:'var(--ink)',outline:'none',resize:'none',lineHeight:1.65}}/>
+        <svg style={{position:'absolute',bottom:10,right:12,opacity:.55,pointerEvents:'none'}} width="26" height="26" viewBox="0 0 28 28" fill="none">
+          <ellipse cx="14" cy="14" rx="4.5" ry="10" fill="#D97036" opacity=".9"/>
+          <ellipse cx="14" cy="14" rx="4.5" ry="10" fill="#D97036" opacity=".9" transform="rotate(60 14 14)"/>
+          <ellipse cx="14" cy="14" rx="4.5" ry="10" fill="#D97036" opacity=".9" transform="rotate(120 14 14)"/>
+          <ellipse cx="14" cy="14" rx="4.5" ry="10" fill="#E8874A" opacity=".55" transform="rotate(30 14 14)"/>
+          <ellipse cx="14" cy="14" rx="4.5" ry="10" fill="#E8874A" opacity=".55" transform="rotate(90 14 14)"/>
+          <ellipse cx="14" cy="14" rx="4.5" ry="10" fill="#E8874A" opacity=".55" transform="rotate(150 14 14)"/>
+        </svg>
+      </div>
+    </div>
+    {/* Save */}
+    <div style={{padding:'20px 14px 0',animation:'fadeUp .8s .18s ease both'}}>
+      <button className={'save-btn'+(savedState?' saved':'')} onClick={handleSave}>
+        {savedState?<span className="check-anim">✓  已记录</span>:'记录今天'}
+      </button>
+    </div>
+    <div className={'toast'+(toastShow?' show':'')}>今天的记录已保存 ✦</div>
+    <div style={{height:80}}/>
+  </>;
+}
+
+// ── App ──
+function App(){
+  const [tab,setTab]=React.useState('log');
+  const [logs,setLogs]=React.useState(getAllLogs());
+  const [tweaksOpen,setTweaksOpen]=React.useState(false);
+  const [accentColor,setAccentColor]=React.useState('#C9A99A');
+  const [bgColor,setBgColor]=React.useState('#FAF7F2');
+
+  React.useEffect(()=>{
+    document.documentElement.style.setProperty('--accent',accentColor);
+    document.documentElement.style.setProperty('--accent-light',accentColor+'28');
+    document.documentElement.style.setProperty('--bg',bgColor);
+  },[accentColor,bgColor]);
+
+  React.useEffect(()=>{
+    const handler=(e)=>{
+      if(e.data?.type==='__activate_edit_mode')setTweaksOpen(true);
+      if(e.data?.type==='__deactivate_edit_mode')setTweaksOpen(false);
+    };
+    window.addEventListener('message',handler);
+    window.parent.postMessage({type:'__edit_mode_available'},'*');
+    return()=>window.removeEventListener('message',handler);
+  },[]);
+
+  return (
+    <div className="app-root">
+      <div style={{paddingBottom:64}}>
+        {tab==='log'&&<LogTab logs={logs} setLogs={setLogs}/>}
+        {tab==='history'&&<div style={{padding:'52px 0 0'}}><HistoryTab logs={logs}/></div>}
+      </div>
+      {/* Bottom tab bar */}
+      <div style={{position:'fixed',bottom:0,left:'50%',transform:'translateX(-50%)',
+        width:'100%',maxWidth:480,
+        background:'rgba(250,247,242,.92)',backdropFilter:'blur(12px)',
+        borderTop:'1px solid var(--border)',
+        display:'flex',zIndex:100,paddingBottom:'env(safe-area-inset-bottom)'}}>
+        {[
+          {id:'log',icon:'◎',label:'记录'},
+          {id:'history',icon:'◈',label:'回顾'},
+        ].map(t=>(
+          <button key={t.id} onClick={()=>setTab(t.id)}
+            style={{flex:1,display:'flex',flexDirection:'column',alignItems:'center',gap:3,
+              padding:'10px 0 8px',background:'none',border:'none',cursor:'pointer',
+              color:tab===t.id?'var(--ink)':'var(--ink3)',transition:'color .15s'}}>
+            <span style={{fontSize:18,lineHeight:1,fontFamily:'DM Mono,monospace'}}>{t.icon}</span>
+            <span style={{fontFamily:'DM Mono,monospace',fontSize:9,letterSpacing:'.1em'}}>{t.label}</span>
+          </button>
+        ))}
+      </div>
+      {/* Tweaks */}
+      <div className={'tweaks-panel'+(tweaksOpen?' open':'')}>
+        <div className="tweaks-title">Tweaks</div>
+        <div className="tweak-row"><label>点缀色</label><input type="color" value={accentColor} onChange={e=>setAccentColor(e.target.value)}/></div>
+        <div className="tweak-row"><label>背景色</label><input type="color" value={bgColor} onChange={e=>setBgColor(e.target.value)}/></div>
+        <div className="tweak-row"><label>主题预设</label>
+          <select onChange={e=>{
+            const v=e.target.value;
+            if(v==='warm'){setAccentColor('#C9A99A');setBgColor('#FAF7F2');}
+            if(v==='sage'){setAccentColor('#8FAF9A');setBgColor('#F4F7F4');}
+            if(v==='slate'){setAccentColor('#8A9AB5');setBgColor('#F4F5F8');}
+            if(v==='ink'){setAccentColor('#9A8A7A');setBgColor('#F2EDE8');}
+          }}>
+            <option value="warm">玫瑰暖</option>
+            <option value="sage">鼠尾草绿</option>
+            <option value="slate">雾霾蓝</option>
+            <option value="ink">古墨</option>
+          </select>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+<div id="root"></div>
+<script>
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('./sw.js').catch(() => {});
+}
+</script>
+</body>
+</html>
